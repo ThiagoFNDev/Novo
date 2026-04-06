@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNIVERSUS — Entrar no Quiz</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            overflow: hidden; color: #e2e8f0;
+        }
+        .stars-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .nebula { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0.15; pointer-events: none; }
+        .nebula-1 { top: -200px; left: -100px; background: #6a0dad; }
+        .nebula-2 { bottom: -200px; right: -100px; background: #1e90ff; }
+        .title {
+            position: fixed; top: 25px; left: 50%; transform: translateX(-50%);
+            font-size: 2.5rem; font-weight: 900; letter-spacing: 0.8rem;
+            background: linear-gradient(135deg, #a78bfa, #60a5fa, #f472b6, #a78bfa);
+            background-size: 300% 300%;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; animation: gs 6s ease infinite; user-select: none; z-index: 10;
+        }
+        @keyframes gs { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+        .home-link {
+            position: fixed; top: 28px; left: 28px; z-index: 20;
+            width: 42px; height: 42px; border-radius: 50%;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: background 0.3s; color: #e2e8f0; text-decoration: none; font-size: 1.2rem;
+        }
+        .home-link:hover { background: rgba(255,255,255,0.15); }
+
+        /* ===== MAIN CARD ===== */
+        .main-card {
+            width: 460px; max-width: 94vw;
+            background: rgba(15,15,30,0.88); backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 24px;
+            padding: 40px 36px; position: relative; z-index: 5;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .main-card h2 {
+            text-align: center; font-size: 1.25rem; font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa, #60a5fa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; margin-bottom: 8px;
+        }
+        .subtitle { text-align: center; color: rgba(255,255,255,0.35); font-size: 0.82rem; margin-bottom: 28px; }
+
+        /* ===== SCREENS ===== */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* ===== CODE ENTRY ===== */
+        .code-inputs {
+            display: flex; gap: 8px; justify-content: center; margin: 20px 0;
+        }
+        .code-inputs input {
+            width: 52px; height: 62px; text-align: center; font-size: 1.5rem;
+            font-weight: 700; font-family: 'Courier New', monospace;
+            background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px; color: #e2e8f0; outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            text-transform: uppercase;
+        }
+        .code-inputs input:focus {
+            border-color: #7c3aed; box-shadow: 0 0 16px rgba(124,58,237,0.2);
+        }
+        .code-inputs input.filled { border-color: rgba(124,58,237,0.4); background: rgba(124,58,237,0.08); }
+        .code-inputs input.err { border-color: #ef4444; background: rgba(239,68,68,0.08); animation: shake 0.4s; }
+
+        @keyframes shake {
+            0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
+        }
+
+        .join-btn {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            background: linear-gradient(135deg, #7c3aed, #3b82f6);
+            color: white; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+            transition: transform 0.15s, opacity 0.2s; margin-top: 10px;
+        }
+        .join-btn:active { transform: scale(0.97); }
+        .join-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .separator {
+            display: flex; align-items: center; gap: 14px; margin: 24px 0;
+            color: rgba(255,255,255,0.2); font-size: 0.75rem;
+        }
+        .separator::before, .separator::after {
+            content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08);
+        }
+
+        /* ===== QR SCAN ===== */
+        .qr-area { text-align: center; }
+        .qr-area label { display: block; color: rgba(255,255,255,0.4); font-size: 0.82rem; margin-bottom: 14px; }
+        .qr-upload-btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 14px 28px; background: rgba(124,58,237,0.12);
+            border: 1px dashed rgba(124,58,237,0.35); border-radius: 14px;
+            color: #a78bfa; font-size: 0.88rem; cursor: pointer; transition: all 0.3s;
+        }
+        .qr-upload-btn:hover { background: rgba(124,58,237,0.2); border-color: #a78bfa; }
+        .qr-upload-btn svg { width: 24px; height: 24px; fill: #a78bfa; }
+        .qr-preview { margin-top: 16px; border-radius: 12px; max-width: 200px; display: none; }
+        #qrFile { display: none; }
+
+        /* ===== NAME ENTRY ===== */
+        .name-card { text-align: center; }
+        .quiz-info {
+            padding: 16px; border-radius: 14px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 20px;
+        }
+        .quiz-info h3 { color: #e2e8f0; font-size: 1rem; margin-bottom: 6px; }
+        .quiz-info .meta { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+        .quiz-info .tag {
+            padding: 3px 10px; border-radius: 10px; font-size: 0.68rem; font-weight: 600;
+        }
+        .tag.cat { background: rgba(124,58,237,0.2); color: #c4b5fd; }
+        .tag.diff { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .tag.count { background: rgba(96,165,250,0.2); color: #60a5fa; }
+
+        .name-input {
+            width: 100%; padding: 14px 18px; border-radius: 12px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            color: #e2e8f0; font-size: 1rem; text-align: center; outline: none;
+            transition: border-color 0.3s;
+        }
+        .name-input:focus { border-color: #7c3aed; }
+        .name-input::placeholder { color: rgba(255,255,255,0.2); }
+
+        /* ===== LOADING SCREEN ===== */
+        .loading-screen { text-align: center; padding: 20px 0; }
+        .spinner {
+            width: 50px; height: 50px; margin: 0 auto 20px;
+            border: 3px solid rgba(255,255,255,0.1); border-top-color: #7c3aed;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
+
+        /* ===== WAITING ROOM ===== */
+        .waiting-room { text-align: center; }
+        .waiting-header { margin-bottom: 24px; }
+        .waiting-header h3 { color: #e2e8f0; font-size: 1.05rem; margin-bottom: 4px; }
+        .waiting-header p { color: rgba(255,255,255,0.35); font-size: 0.8rem; }
+
+        .avatar-circle {
+            width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 12px;
+            background: linear-gradient(135deg, #7c3aed, #3b82f6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; font-weight: 800; color: white;
+        }
+
+        .waiting-anim {
+            margin: 20px auto;
+            display: flex; gap: 6px; justify-content: center; align-items: end; height: 40px;
+        }
+        .waiting-anim span {
+            width: 6px; border-radius: 3px;
+            background: #7c3aed; animation: wave 1.2s ease-in-out infinite;
+        }
+        .waiting-anim span:nth-child(2){animation-delay:0.1s;height:25px}
+        .waiting-anim span:nth-child(3){animation-delay:0.2s;height:32px}
+        .waiting-anim span:nth-child(4){animation-delay:0.3s;height:20px}
+        .waiting-anim span:nth-child(5){animation-delay:0.4s;height:28px}
+        @keyframes wave {
+            0%,100%{transform:scaleY(0.5);opacity:0.4} 50%{transform:scaleY(1);opacity:1}
+        }
+
+        /* Player list */
+        .player-list {
+            margin-top: 20px; border-radius: 14px;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+        .player-list-header {
+            padding: 10px 16px; display: flex; justify-content: space-between;
+            font-size: 0.7rem; color: rgba(255,255,255,0.3); text-transform: uppercase;
+            letter-spacing: 0.08em; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .player-row {
+            display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+        .player-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 700; color: white;
+        }
+        .player-name { flex: 1; font-size: 0.85rem; color: #e2e8f0; }
+        .player-status { font-size: 0.65rem; color: #22c55e; }
+
+        .leave-btn {
+            margin-top: 20px; padding: 10px 20px; background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.2); border-radius: 10px;
+            color: #ef4444; font-size: 0.8rem; cursor: pointer; transition: background 0.2s;
+        }
+        .leave-btn:hover { background: rgba(239,68,68,0.2); }
+
+        /* ===== ERROR OVERLAY ===== */
+        .error-msg {
+            padding: 12px 16px; border-radius: 10px;
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+            color: #ef4444; font-size: 0.8rem; text-align: center; display: none;
+            margin-top: 10px;
+        }
+        .error-msg.show { display: block; animation: fadeIn 0.3s; }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: rgba(34,197,94,0.95); color: white; padding: 12px 24px;
+            border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+            transition: transform 0.3s ease; z-index: 100;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.err { background: rgba(239,68,68,0.95); }
+
+        /* ===== PASTE INPUT ===== */
+        .paste-line {
+            text-align: center; margin-bottom: 14px; position: relative;
+        }
+        .paste-input {
+            width: 70%; margin: 0 auto; padding: 12px 18px; border-radius: 10px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: #e2e8f0; font-size: 1rem; text-align: center; letter-spacing: 0.3em;
+            font-family: 'Courier New', monospace; text-transform: uppercase;
+            outline: none; transition: border-color 0.3s;
+        }
+        .paste-input:focus { border-color: #7c3aed; }
+        .paste-input::placeholder { color: rgba(255,255,255,0.2); letter-spacing: 0.1em; font-size: 0.85rem; }
+
+        @media (max-width: 500px) {
+            .main-card { padding: 30px 22px; }
+            .code-inputs input { width: 42px; height: 52px; font-size: 1.2rem; }
+            .paste-input { width: 90%; }
+        }
+    </style>
+</head>
+<body>
+    <canvas class="stars-layer" id="stars1"></canvas>
+    <canvas class="stars-layer" id="stars2"></canvas>
+    <canvas class="stars-layer" id="stars3"></canvas>
+    <div class="nebula nebula-1"></div>
+    <div class="nebula nebula-2"></div>
+    <h1 class="title">UNIVERSUS</h1>
+
+    <a href="pagina-inicial.html" class="home-link" title="Inicio">&#8592;</a>
+
+    <div class="main-card">
+        <!-- SCREEN 1: Enter Code -->
+        <div class="screen active" id="screenEntry">
+            <h2>Entrar no Quiz</h2>
+            <p class="subtitle">Insira o codigo fornecido pelo professor ou escaneie o QR</p>
+
+            <!-- Individual letter boxes -->
+            <div class="code-inputs" id="codeBoxes">
+                <input type="text" maxlength="1" data-i="0" autofocus>
+                <input type="text" maxlength="1" data-i="1">
+                <input type="text" maxlength="1" data-i="2">
+                <input type="text" maxlength="1" data-i="3">
+                <input type="text" maxlength="1" data-i="4">
+                <input type="text" maxlength="1" data-i="5">
+            </div>
+
+            <!-- Or paste the full code -->
+            <div class="paste-line">
+                <input class="paste-input" id="pasteCode" type="text" maxlength="6" placeholder="Ou cole o codigo aqui">
+            </div>
+
+            <div class="error-msg" id="codeError"></div>
+
+            <button class="join-btn" id="joinBtn" disabled>Entrar</button>
+
+            <div class="separator">ou</div>
+
+            <div class="qr-area">
+                <label>Escaneie o QR Code</label>
+                <label class="qr-upload-btn" id="qrLabel">
+                    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M2 2v6h6V2H2zm4 4H4V4h2v2zm12-4h-6v6h6V2zm-2 4h-2V4h2v2zM2 16v6h6v-6H2zm4 4H4v-2h2v2zM12 22h2v-2h-2v2zm4 0h2v-2h-2v2zm-4-2h2v-2h-2v2zm4 0h2v-2h-2v2zm0-4h2v-2h-2v2zm-4-2v6h2v-2h2v-2h-2v-2h-2zm4-2h2v-2h-2v2zM4 12h2v-2H4v2z"/></svg>
+                    Upload de QR Code
+                </label>
+                <input type="file" id="qrFile" accept="image/*">
+                <img class="qr-preview" id="qrPreview">
+            </div>
+        </div>
+
+        <!-- SCREEN 2: Name Entry -->
+        <div class="screen" id="screenName">
+            <div class="name-card">
+                <h2>Identifique-se</h2>
+                <p class="subtitle">Como deseja ser chamado no quiz?</p>
+
+                <div class="quiz-info" id="quizInfo"></div>
+
+                <input class="name-input" id="nameInput" type="text" maxlength="25" placeholder="Seu nome...">
+                <div class="error-msg" id="nameError"></div>
+                <button class="join-btn" id="confirmNameBtn" style="margin-top:16px;">Confirmar Nome</button>
+                <button class="leave-btn" id="backToEntry" style="margin-top:10px;background:none;border:none;color:rgba(255,255,255,0.3);padding:8px;">Voltar</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: Loading -->
+        <div class="screen" id="screenLoading">
+            <div class="loading-screen">
+                <div class="spinner"></div>
+                <p class="loading-text">Conectando ao quiz...</p>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: Waiting Room -->
+        <div class="screen" id="screenWaiting">
+            <div class="waiting-room">
+                <div class="waiting-header">
+                    <h3 id="waitingQuizTitle">Quiz</h3>
+                    <p>O professor ainda nao iniciou o quiz. Aguarde...</p>
+                </div>
+
+                <div class="avatar-circle" id="myAvatar">?</div>
+                <div style="font-size:0.9rem;font-weight:600;" id="myName">-</div>
+
+                <div class="waiting-anim">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+
+                <div class="player-list">
+                    <div class="player-list-header">
+                        <span>Jogadores</span>
+                        <span id="playerCount">1 jogador</span>
+                    </div>
+                    <div id="playerListBody"></div>
+                </div>
+
+                <button class="leave-btn" id="leaveBtn">Sair</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+    // ===== STARS =====
+    function genStars(id,n,sz,sp){
+        const c=document.getElementById(id),x=c.getContext('2d');
+        c.width=innerWidth;c.height=innerHeight;
+        const s=[];for(let i=0;i<n;i++)s.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*sz+0.5,a:Math.random()*0.8+0.2,t:Math.random()*0.02+0.005});
+        let tm=0;
+        (function d(){x.clearRect(0,0,c.width,c.height);tm+=sp;s.forEach(p=>{const a=p.a*(0.6+0.4*Math.sin(tm*p.t*10));x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fillStyle=`rgba(255,255,255,${a})`;x.fill()});requestAnimationFrame(d)})();
+        addEventListener('resize',()=>{c.width=innerWidth;c.height=innerHeight});
+    }
+    genStars('stars1',200,1.2,0.3);genStars('stars2',100,1.8,0.2);genStars('stars3',50,2.5,0.1);
+
+    // ===== STATE =====
+    const avatarColors = ['#7c3aed','#3b82f6','#22c55e','#ef4444','#f59e0b','#ec4899','#06b6d4','#8b5cf6'];
+    let enteredCode = '';
+    let playerName = '';
+    let players = [];
+
+    // ===== MOCK QUIZ DATA =====
+    const mockQuizzes = {
+        'ABC123': { title:'Espaco e Astronomia', cat:'Ciencias', diff:'Medio', questions:10, creator:'Prof. Silva' },
+        'K7B3NP': { title:'Capitais do Mundo', cat:'Geografia', diff:'Facil', questions:15, creator:'Prof. Ana' },
+        'XYZ789': { title:'Historia do Brasil', cat:'Historia', diff:'Dificil', questions:12, creator:'Prof. Carlos' },
+        'DEMO':    { title:'Quiz de Teste', cat:'Tecnologia', diff:'Facil', questions:5, creator:'Professor' },
+    };
+
+    // ===== SCREENS =====
+    function show(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen' + id).classList.add('active');
+    }
+
+    // ===== CODE INPUT BOXES =====
+    const boxes = document.querySelectorAll('#codeBoxes input');
+    const joinBtn = document.getElementById('joinBtn');
+    const codeError = document.getElementById('codeError');
+
+    function getCode() {
+        return Array.from(boxes).map(b => b.value.trim().toUpperCase()).join('');
+    }
+
+    boxes.forEach((box, i) => {
+        box.addEventListener('input', () => {
+            const v = box.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+            box.value = v;
+            if (v) {
+                box.classList.add('filled');
+                if (i < boxes.length - 1) boxes[i + 1].focus();
+            } else {
+                box.classList.remove('filled');
+            }
+            checkCode();
+        });
+        box.addEventListener('keydown', e => {
+            if (e.key === 'Backspace' && !box.value && i > 0) {
+                boxes[i - 1].focus();
+                boxes[i - 1].value = '';
+                boxes[i - 1].classList.remove('filled');
+                checkCode();
+            }
+            if (e.key === 'Enter' && joinBtn.disabled === false) joinBtn.click();
+        });
+    });
+
+    // Paste code
+    const pasteInput = document.getElementById('pasteCode');
+    pasteInput.addEventListener('input', () => {
+        const v = pasteInput.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        pasteInput.value = v;
+
+        // Distribute to boxes
+        for (let i = 0; i < 6; i++) {
+            boxes[i].value = v[i] || '';
+            boxes[i].classList.toggle('filled', !!v[i]);
+        }
+        checkCode();
+    });
+    pasteInput.addEventListener('focus', () => {
+        pasteInput.select();
+    });
+
+    function checkCode() {
+        const code = getCode();
+        joinBtn.disabled = code.length < 4;
+        codeError.classList.remove('show');
+        // Clear box errors
+        boxes.forEach(b => b.classList.remove('err'));
+    }
+
+    // Join
+    joinBtn.addEventListener('click', () => {
+        const code = getCode();
+        if (code.length < 4) {
+            codeError.textContent = 'Insira pelo menos 4 caracteres';
+            codeError.classList.add('show');
+            return;
+        }
+        tryEnter(code);
+    });
+
+    function tryEnter(code) {
+        enteredCode = code;
+        // Check if quiz exists (mock)
+        const quiz = mockQuizzes[code];
+        if (!quiz) {
+            showError('Quiz nao encontrado. Verifique o codigo e tente novamente.');
+            boxes.forEach(b => b.classList.add('err'));
+            return;
+        }
+
+        // Show quiz info
+        const info = document.getElementById('quizInfo');
+        info.innerHTML = `
+            <h3>${quiz.title}</h3>
+            <div class="meta">
+                <span class="tag cat">${quiz.cat}</span>
+                <span class="tag diff">${quiz.diff}</span>
+                <span class="tag count">${quiz.questions} perguntas</span>
+            </div>
+        `;
+
+        show('Name');
+        setTimeout(() => document.getElementById('nameInput').focus(), 200);
+    }
+
+    function showError(msg) {
+        codeError.textContent = msg;
+        codeError.classList.add('show');
+    }
+
+    // ===== NAME =====
+    const nameInput = document.getElementById('nameInput');
+    const nameError = document.getElementById('nameError');
+
+    nameInput.addEventListener('input', () => nameError.classList.remove('show'));
+    nameInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('confirmNameBtn').click();
+    });
+
+    document.getElementById('confirmNameBtn').addEventListener('click', () => {
+        const name = nameInput.value.trim();
+        if (name.length < 2) {
+            nameError.textContent = 'Nome deve ter pelo menos 2 caracteres';
+            nameError.classList.add('show');
+            return;
+        }
+        playerName = name;
+        enterWaiting();
+    });
+
+    // ===== BACK =====
+    document.getElementById('backToEntry').addEventListener('click', () => show('Entry'));
+
+    // ===== WAITING ROOM =====
+    function enterWaiting() {
+        show('Loading');
+
+        // Simulate connection
+        setTimeout(() => {
+            const quiz = mockQuizzes[enteredCode] || { title: 'Quiz ' + enteredCode };
+
+            document.getElementById('waitingQuizTitle').textContent = quiz.title;
+
+            const color = avatarColors[Math.floor(Math.random() * avatarColors.length)];
+            const initial = playerName.charAt(0).toUpperCase();
+            document.getElementById('myAvatar').style.background = `linear-gradient(135deg, ${color}, ${avatarColors[Math.floor(Math.random()*avatarColors.length)]})`;
+            document.getElementById('myAvatar').textContent = initial;
+            document.getElementById('myName').textContent = playerName;
+
+            players = [{ name: playerName, color, initial }];
+            renderPlayers();
+
+            show('Waiting');
+
+            // Simulate other players joining
+            simulatePlayers();
+        }, 1800);
+    }
+
+    function renderPlayers() {
+        const body = document.getElementById('playerListBody');
+        body.innerHTML = players.map(p => `
+            <div class="player-row">
+                <div class="player-avatar" style="background:${p.color}">${p.initial}</div>
+                <span class="player-name">${esc(p.name)}</span>
+                <span class="player-status">Pronto</span>
+            </div>
+        `).join('');
+        document.getElementById('playerCount').textContent = `${players.length} jogador${players.length > 1 ? 'es' : ''}`;
+    }
+
+    function simulatePlayers() {
+        const names = ['Maria', 'Joao', 'Pedro', 'Ana', 'Lucas', 'Carlos', 'Beatriz', 'Rafael'];
+        const added = new Set([playerName]);
+        let idx = 0;
+
+        const interval = setInterval(() => {
+            if (players.length >= 6 || idx >= names.length) clearInterval(interval);
+            let name = names[idx++];
+            if (added.has(name)) return;
+            added.add(name);
+            const color = avatarColors[Math.floor(Math.random() * avatarColors.length)];
+            players.push({ name, color, initial: name.charAt(0) });
+            renderPlayers();
+        }, 3500 + Math.random() * 3000);
+    }
+
+    // ===== QR UPLOAD =====
+    document.getElementById('qrFile').addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const preview = document.getElementById('qrPreview');
+            preview.src = ev.target.result;
+            preview.style.display = 'block';
+
+            // Try to decode QR code (simplified: just ask user for the code)
+            showToast('QR carregado! Para esta demo, insira o codigo manualmente ou use um dos codigos de teste.', 'err');
+            // Auto-fill a demo code
+            setTimeout(() => {
+                document.getElementById('pasteCode').value = 'K7B3NP';
+                document.getElementById('pasteCode').dispatchEvent(new Event('input'));
+            }, 1000);
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // ===== LEAVE =====
+    document.getElementById('leaveBtn').addEventListener('click', () => {
+        show('Entry');
+        playerName = '';
+        enteredCode = '';
+        nameInput.value = '';
+        boxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+        pasteInput.value = '';
+        showToast('Saiu do quiz');
+    });
+
+    // ===== TOAST =====
+    function showToast(msg, type = 'ok') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast' + (type === 'err' ? ' err' : '') + ' show';
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // ===== UTILS =====
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    </script>
+</body>
+</html>
